@@ -1,3 +1,4 @@
+// use the Bookshelf ORM to handle SQL interactions
 var Bookshelf = require('bookshelf');
 var path = require('path');
 
@@ -44,6 +45,9 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
 /************************************************************/
 // Add additional schema definitions below
 /************************************************************/
+
+// create new table 'users' for columns username, password
+
 
 
 module.exports = db;

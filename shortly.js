@@ -12,6 +12,7 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
 var app = express();
+// var cookieParser = require('cookieParser');
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -22,27 +23,47 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+// app.use(express.cookieParser('shhhh, very secret'));
+// app.use(express.session());
 
-app.get('/', 
+// function restrict(req, res, next) {
+//   if (req.session.user) {
+//     next();
+//   } else {
+//     req.session.error = 'Access denied!';
+//     res.redirect('/login');
+//   }
+// };
+
+app.get('/',
 function(req, res) {
+  console.log('express handling / GET for homepage')
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
+  console.log('express handling /create GET')
+  // do we have to add more here?
   res.render('index');
 });
 
-app.get('/links', 
+// when user clicks 'all links', send some json to
+// Backbone to render prettily
+app.get('/links',
 function(req, res) {
+  console.log('express handling /links GET')
+  // why reset?
   Links.reset().fetch().then(function(links) {
+    console.log('Here are all our links:', links.models);
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
+  console.log('express handling /links POST for uri', uri)
 
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
@@ -59,6 +80,7 @@ function(req, res) {
           return res.send(404);
         }
 
+        console.log('making new Link with url', uri);
         var link = new Link({
           url: uri,
           title: title,
@@ -78,7 +100,53 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+// paste in and edit example
 
+// app.get('/login', function(request, response) {
+//   // may want to delegate this concern to a model
+//    response.send('<form method="post" action="/login">' +
+//   '<p>' +
+//     '<label>Username:</label>' +
+//     '<input type="text" name="username">' +
+//   '</p>' +
+//   '<p>' +
+//     '<label>Password:</label>' +
+//     '<input type="text" name="password">' +
+//   '</p>' +
+//   '<p>' +
+//     '<input type="submit" value="Login">' +
+//   '</p>' +
+//   '</form>'); // response code much?
+// });
+
+// app.post('/login', function(request, response) {
+//     // escape these?
+//     var username = request.body.username;
+//     var password = request.body.password;
+
+//     // improve this test
+//     if(username === 'demo' && password === 'demo'){
+//         request.session.regenerate(function(){
+//         request.session.user = username;
+//         response.redirect('/restricted');
+//         });
+//     }
+//     else {
+//       // really good ux would tell the user their
+//       res.redirect('login');
+//     }
+// });
+
+// app.get('/logout', function(request, response){
+//     request.session.destroy(function(){
+//         response.redirect('/');
+//     });
+// });
+
+// // we can probably add this 'restrict' keyword on other methods above
+// app.get('/restricted', restrict, function(request, response){
+//   response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
@@ -86,7 +154,9 @@ function(req, res) {
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
 
+// takes a shortlyd synonym from user and looks for real url
 app.get('/*', function(req, res) {
+  console.log('express handling /* wildcard GET for', req.params);
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
       res.redirect('/');
@@ -101,6 +171,10 @@ app.get('/*', function(req, res) {
           .update({
             visits: link.get('visits') + 1,
           }).then(function() {
+            // console.log('link:', link);
+            console.log('redirect to', link.get('url'));
+            // console.log('with href', res.request.href);
+
             return res.redirect(link.get('url'));
           });
       });
