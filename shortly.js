@@ -11,8 +11,10 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
 var app = express();
-// var cookieParser = require('cookieParser');
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -23,17 +25,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-// app.use(express.cookieParser('shhhh, very secret'));
-// app.use(express.session());
+app.use(cookieParser());
+app.use(session());
 
-// function restrict(req, res, next) {
-//   if (req.session.user) {
-//     next();
-//   } else {
-//     req.session.error = 'Access denied!';
-//     res.redirect('/login');
-//   }
-// };
+function restrict(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+};
 
 app.get('/',
 function(req, res) {
@@ -102,51 +104,51 @@ function(req, res) {
 
 // paste in and edit example
 
-// app.get('/login', function(request, response) {
-//   // may want to delegate this concern to a model
-//    response.send('<form method="post" action="/login">' +
-//   '<p>' +
-//     '<label>Username:</label>' +
-//     '<input type="text" name="username">' +
-//   '</p>' +
-//   '<p>' +
-//     '<label>Password:</label>' +
-//     '<input type="text" name="password">' +
-//   '</p>' +
-//   '<p>' +
-//     '<input type="submit" value="Login">' +
-//   '</p>' +
-//   '</form>'); // response code much?
-// });
+app.get('/login', function(request, response) {
+  // may want to delegate this concern to a model
+   response.send('<form method="post" action="/login">' +
+  '<p>' +
+    '<label>Username:</label>' +
+    '<input type="text" name="username">' +
+  '</p>' +
+  '<p>' +
+    '<label>Password:</label>' +
+    '<input type="text" name="password">' +
+  '</p>' +
+  '<p>' +
+    '<input type="submit" value="Login">' +
+  '</p>' +
+  '</form>'); // response code much?
+});
 
-// app.post('/login', function(request, response) {
-//     // escape these?
-//     var username = request.body.username;
-//     var password = request.body.password;
+app.post('/login', function(request, response) {
+    // escape these?
+    var username = request.body.username;
+    var password = request.body.password;
 
-//     // improve this test
-//     if(username === 'demo' && password === 'demo'){
-//         request.session.regenerate(function(){
-//         request.session.user = username;
-//         response.redirect('/restricted');
-//         });
-//     }
-//     else {
-//       // really good ux would tell the user their
-//       res.redirect('login');
-//     }
-// });
+    // improve this test
+    if(username === 'demo' && password === 'demo'){
+        request.session.regenerate(function(){
+        request.session.user = username;
+        response.redirect('/restricted');
+        });
+    }
+    else {
+      // really good ux would tell the user their
+      res.redirect('login');
+    }
+});
 
-// app.get('/logout', function(request, response){
-//     request.session.destroy(function(){
-//         response.redirect('/');
-//     });
-// });
+app.get('/logout', function(request, response){
+    request.session.destroy(function(){
+        response.redirect('/');
+    });
+});
 
-// // we can probably add this 'restrict' keyword on other methods above
-// app.get('/restricted', restrict, function(request, response){
-//   response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
-// });
+// we can probably add this 'restrict' keyword on other methods above
+app.get('/restricted', restrict, function(request, response){
+  response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
