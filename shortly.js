@@ -11,6 +11,7 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+// libraries for authentication
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
 
@@ -28,7 +29,7 @@ app.use(express.static(__dirname + '/public'));
 
 // for authentication
 app.use(cookieParser());
-app.use(session());
+app.use(session({secret: 'i like lionel richie'}));
 
 function restrict(req, res, next) {
   if (req.session.user) {
@@ -39,13 +40,13 @@ function restrict(req, res, next) {
   }
 };
 
-app.get('/',
+app.get('/', restrict,
 function(req, res) {
   console.log('express handling / GET for homepage')
   res.render('index');
 });
 
-app.get('/create',
+app.get('/create', restrict,
 function(req, res) {
   console.log('express handling /create GET')
   // do we have to add more here?
@@ -54,7 +55,7 @@ function(req, res) {
 
 // when user clicks 'all links', send some json to
 // Backbone to render prettily
-app.get('/links',
+app.get('/links', restrict,
 function(req, res) {
   console.log('express handling /links GET')
   // why reset?
@@ -64,7 +65,7 @@ function(req, res) {
   });
 });
 
-app.post('/links',
+app.post('/links', restrict,
 function(req, res) {
   var uri = req.body.url;
   console.log('express ng /links POST for uri', uri)
@@ -104,7 +105,23 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
-// paste in and edit example
+app.get('/signup', function(request, response){
+  console.log('express handling /signup POST');
+  response.render('signup');
+});
+
+app.post('/signup', function(request, response) {
+  console.log('express handling /signup POST');
+  // escape these?
+  var username = request.body.username;
+  var password = request.body.password;
+
+  // if user name exists
+    // alert username exist- pick another name
+    // redirrect to the sign up page
+  // else
+    // add user and password to databases (using bcrypt)
+});
 
 app.get('/login', function(request, response) {
   console.log('express handling /login GET');
@@ -117,31 +134,38 @@ app.post('/login', function(request, response) {
   var username = request.body.username;
   var password = request.body.password;
 
-  // improve this test
+  // improve this test - intstead of demo, query db
   if(username === 'demo' && password === 'demo'){
-      request.session.regenerate(function(){
-      request.session.user = username;
-      // response.redirect('/create');
-      response.redirect('/restricted');
+  // if username exists
+    // test it and the password against the db
+      // if it matches
+        request.session.regenerate(function(){
+        request.session.user = username;
+        response.redirect('/');
       });
+      // else
+        // really good ux would tell the user how they messed up
+        // response.redirect('/login');
   }
   else {
-    // really good ux would tell the user they messed up
+    // really good ux would tell the user how they messed up
     response.redirect('/login');
   }
 });
 
-// app.get('/logout', function(request, response){
-//     request.session.destroy(function(){
-//         response.redirect('/');
-//     });
-// });
-
-// we can probably add this 'restrict' keyword on other methods above
-
-app.get('/restricted', restrict, function(request, response){
-  response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
+app.get('/logout', function(request, response){
+  console.log('express handling /logout GET');
+  request.session.destroy(function(){
+      response.redirect('/');
+  });
 });
+
+
+// // we can probably add this 'restrict' keyword on other methods above
+
+// app.get('/restricted', restrict, function(request, response){
+//   response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
@@ -150,6 +174,7 @@ app.get('/restricted', restrict, function(request, response){
 /************************************************************/
 
 // takes a shortlyd synonym from user and looks for real url
+// (not rewsctrictdded)
 app.get('/*', function(req, res) {
   console.log('express handling /* wildcard GET for', req.params);
   new Link({ code: req.params[0] }).fetch().then(function(link) {
