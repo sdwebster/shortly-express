@@ -54,7 +54,7 @@ db.knex.schema.hasTable('users').then(function(exists) {
       user.increments('id').primary();
       user.string('username', 64);
       user.string('encryptedPassword', 255);
-      user.timestamps();
+      // user.timestamps();
     }).then(function (table) {
       console.log('Created Table', table);
     });

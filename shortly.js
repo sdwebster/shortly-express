@@ -14,6 +14,7 @@ var Click = require('./app/models/click');
 // libraries for authentication
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 
@@ -65,6 +66,7 @@ function(req, res) {
   });
 });
 
+// let user create new link
 app.post('/links', restrict,
 function(req, res) {
   var uri = req.body.url;
@@ -117,10 +119,25 @@ app.post('/signup', function(request, response) {
   var password = request.body.password;
 
   // if user name exists
-    // alert username exist- pick another name
-    // redirrect to the sign up page
-  // else
-    // add user and password to databases (using bcrypt)
+  new User({username: username}).fetch().then(function(user){
+    if (user){
+      // alert username exist- pick another name
+      alert('username exist: come up with a new one');
+      // redirrect to the sign up page
+      response.redirect('/signup');
+    } else {
+      // add user and password to databases (using bcrypt)
+      var newUser = new User({
+        username: username,
+        encryptedPassword: password
+      });
+      // why do we have to both save and add?
+      newUser.save().then(function(newUser){
+        Users.add(newUser);
+        response.send(200, newUser);
+      });
+    }
+  })
 });
 
 app.get('/login', function(request, response) {
@@ -174,7 +191,7 @@ app.get('/logout', function(request, response){
 /************************************************************/
 
 // takes a shortlyd synonym from user and looks for real url
-// (not rewsctrictdded)
+// (not restricted)
 app.get('/*', function(req, res) {
   console.log('express handling /* wildcard GET for', req.params);
   new Link({ code: req.params[0] }).fetch().then(function(link) {
