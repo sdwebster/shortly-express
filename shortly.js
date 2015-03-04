@@ -43,13 +43,11 @@ function restrict(req, res, next) {
 
 app.get('/', restrict,
 function(req, res) {
-  console.log('express handling / GET for homepage')
   res.render('index');
 });
 
 app.get('/create', restrict,
 function(req, res) {
-  console.log('express handling /create GET')
   // do we have to add more here?
   res.render('index');
 });
@@ -58,7 +56,6 @@ function(req, res) {
 // Backbone to render prettily
 app.get('/links', restrict,
 function(req, res) {
-  console.log('express handling /links GET')
   // why reset?
   Links.reset().fetch().then(function(links) {
     console.log('Here are all our links:', links.models);
@@ -70,7 +67,6 @@ function(req, res) {
 app.post('/links', restrict,
 function(req, res) {
   var uri = req.body.url;
-  console.log('express ng /links POST for uri', uri)
 
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
@@ -108,12 +104,10 @@ function(req, res) {
 /************************************************************/
 
 app.get('/signup', function(request, response){
-  console.log('express handling /signup POST');
   response.render('signup');
 });
 
 app.post('/signup', function(request, response) {
-  console.log('express handling /signup POST');
   // escape these?
   var username = request.body.username;
   var password = request.body.password;
