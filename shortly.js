@@ -134,7 +134,8 @@ app.post('/signup', function(request, response) {
       // why do we have to both save and add?
       newUser.save().then(function(newUser){
         Users.add(newUser);
-        response.send(200, newUser);
+        // better ux would log user in automatically
+        response.redirect('/login');
       });
     }
   })
@@ -152,22 +153,37 @@ app.post('/login', function(request, response) {
   var password = request.body.password;
 
   // improve this test - intstead of demo, query db
-  if(username === 'demo' && password === 'demo'){
-  // if username exists
-    // test it and the password against the db
-      // if it matches
-        request.session.regenerate(function(){
-        request.session.user = username;
-        response.redirect('/');
-      });
-      // else
-        // really good ux would tell the user how they messed up
-        // response.redirect('/login');
-  }
-  else {
-    // really good ux would tell the user how they messed up
-    response.redirect('/login');
-  }
+  // if(username === 'demo' && password === 'demo'){
+
+  new User( { username: username } ).fetch().then(function(user){
+    // if username exists
+    if( user ){
+      // test it and the password against the db
+      db.knex('users')
+        // check is submitted pw same as encrypted pw?
+        .where({
+          username: user.get('username'),
+          encryptedPassword: 'password'
+        })
+        .then(function( user ){
+          if( user ){
+            request.session.regenerate(function(){
+              request.session.user = username;
+              console.log('Welcome, ' + username);
+              response.redirect('/');
+            });
+          } else {
+            // wrong password
+            // better ux would tell the user how they messed up
+            response.redirect('/login');
+          }
+        } );
+    } else {
+      // no such user
+      // better ux would tell the user how they messed up
+      response.redirect('/login');
+    }
+  });
 });
 
 app.get('/logout', function(request, response){
@@ -177,23 +193,13 @@ app.get('/logout', function(request, response){
   });
 });
 
-
-// // we can probably add this 'restrict' keyword on other methods above
-
-// app.get('/restricted', restrict, function(request, response){
-//   response.send('This is the restricted area! Hello ' + request.session.user + '! click <a href="/logout">here to logout</a>');
-// });
-
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
 
-// takes a shortlyd synonym from user and looks for real url
-// (not restricted)
 app.get('/*', function(req, res) {
-  console.log('express handling /* wildcard GET for', req.params);
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
       res.redirect('/');
@@ -208,10 +214,7 @@ app.get('/*', function(req, res) {
           .update({
             visits: link.get('visits') + 1,
           }).then(function() {
-            // console.log('link:', link);
             console.log('redirect to', link.get('url'));
-            // console.log('with href', res.request.href);
-
             return res.redirect(link.get('url'));
           });
       });
