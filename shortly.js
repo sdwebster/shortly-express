@@ -115,33 +115,31 @@ app.post('/signup', function(request, response) {
   // if user name exists
   new User({username: username}).fetch().then(function(user){
     if (user){
-      // alert username exist- pick another name
-      alert('username exist: come up with a new one');
-      // redirrect to the sign up page
+      // redirect to the sign up page
       response.redirect('/signup');
     } else {
       // add user and password to databases (using bcrypt)
-      var newUser = new User({
-        username: username,
-        encryptedPassword: password
-      });
-      // why do we have to both save and add?
-      newUser.save().then(function(newUser){
-        Users.add(newUser);
-        // better ux would log user in automatically
-        response.redirect('/login');
+      var thisEncryptedPassword = bcrypt.hash(password, null, null, function(err, hash){
+        var newUser = new User({
+          username: username,
+          encryptedPassword: hash
+        });
+        // why do we have to both save and add?
+        newUser.save().then(function(newUser){
+          Users.add(newUser);
+          // better ux would log user in automatically
+          response.redirect('/login');
+        });
       });
     }
   })
 });
 
 app.get('/login', function(request, response) {
-  console.log('express handling /login GET');
   response.render('login');
 });
 
 app.post('/login', function(request, response) {
-  console.log('express handling /login POST');
   // escape these?
   var username = request.body.username;
   var password = request.body.password;
@@ -153,6 +151,7 @@ app.post('/login', function(request, response) {
     // if username exists
     if( user ){
       // test it and the password against the db
+
       db.knex('users')
         // check is submitted pw same as encrypted pw?
         .where({
