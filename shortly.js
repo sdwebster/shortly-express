@@ -58,7 +58,6 @@ app.get('/links', restrict,
 function(req, res) {
   // why reset?
   Links.reset().fetch().then(function(links) {
-    console.log('Here are all our links:', links.models);
     res.send(200, links.models);
   });
 });
@@ -148,29 +147,29 @@ app.post('/login', function(request, response) {
   // if(username === 'demo' && password === 'demo'){
 
   new User( { username: username } ).fetch().then(function(user){
+    // console.log(user);
+    console.log(user.get('encryptedPassword'));
     // if username exists
     if( user ){
-      // test it and the password against the db
-
-      db.knex('users')
-        // check is submitted pw same as encrypted pw?
-        .where({
-          username: user.get('username'),
-          encryptedPassword: 'password'
-        })
-        .then(function( user ){
-          if( user ){
+      bcrypt.compare(password, user.get('encryptedPassword'), function(err, res){
+        if (err){
+          throw err;
+        } else {
+          if (res){
+            // valid user and password
             request.session.regenerate(function(){
               request.session.user = username;
               console.log('Welcome, ' + username);
               response.redirect('/');
             });
           } else {
-            // wrong password
+            // invalid user and password
             // better ux would tell the user how they messed up
             response.redirect('/login');
           }
-        } );
+        }
+      });
+
     } else {
       // no such user
       // better ux would tell the user how they messed up
@@ -180,7 +179,6 @@ app.post('/login', function(request, response) {
 });
 
 app.get('/logout', function(request, response){
-  console.log('express handling /logout GET');
   request.session.destroy(function(){
       response.redirect('/');
   });
